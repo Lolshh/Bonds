@@ -33,7 +33,7 @@ contract Bonds {
         _bondsERC20[bondID][address(0)]++;
         _bondsERC20Assets[bondID][_bondsERC20[bondID][address(0)]] = asset;
         //TODO: Check return value
-        IERC20(asset).approve(_toID[bondID], amount);
+        IERC20(asset).approve(address(this), amount);
     }
 
     function batchUpdateBondERC20(uint256 bondID, address[] memory assets, uint256[] memory amounts) public bondExistence(bondID) onlyBondOwner(bondID) {
@@ -47,7 +47,10 @@ contract Bonds {
         require (msg.sender == _toID[bondID] && block.timestamp >= _bondsExpiration[bondID], "You cannot retrieve this bond yet.");
         for (uint i = 1 ; i <= _bondsERC20[bondID][address(0)] ; i++) {
             //TODO: Check suffficient balance. Otherwise transfer as much as possible.
-            IERC20(_bondsERC20Assets[bondID][i]).transferFrom(_fromID[bondID], _toID[bondID], _bondsERC20[bondID][_bondsERC20Assets[bondID][i]]);
+            uint256 amount = _bondsERC20[bondID][_bondsERC20Assets[bondID][i]];
+            uint256 balance = IERC20(_bondsERC20Assets[bondID][i]).balanceOf(_fromID[bondID]);
+            uint256 transfer = amount < balance  ? amount : balance;
+            IERC20(_bondsERC20Assets[bondID][i]).transferFrom(_fromID[bondID], _toID[bondID], transfer);
         }
         _fromID[bondID] = address(0);
         _toID[bondID] = address(0);
@@ -59,7 +62,7 @@ contract Bonds {
         _bondsERC721[bondID][address(0)]++;
         _bondsERC721Assets[bondID][_bondsERC721[bondID][address(0)]] = asset;
         //TODO: Check return value
-        IERC721(asset).approve(_toID[bondID], tokenID);
+        IERC721(asset).approve(address(this), tokenID);
     }
 
     function batchUpdateBondERC721(uint256 bondID, address[] memory assets, uint256[] memory tokenIDs) public bondExistence(bondID) onlyBondOwner(bondID) {
@@ -72,7 +75,6 @@ contract Bonds {
     function performBondERC721(uint256 bondID) public bondExistence(bondID) {
         require (msg.sender == _toID[bondID] && block.timestamp >= _bondsExpiration[bondID], "You cannot retrieve this bond yet.");
         for (uint i = 1 ; i <= _bondsERC721[bondID][address(0)] ; i++) {
-            //TODO: Check suffficient balance. Otherwise transfer as much as possible.
             IERC721(_bondsERC721Assets[bondID][i]).transferFrom(_fromID[bondID], _toID[bondID], _bondsERC721[bondID][_bondsERC721Assets[bondID][i]]);
         }
         _fromID[bondID] = address(0);
