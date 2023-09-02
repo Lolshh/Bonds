@@ -3,13 +3,13 @@ pragma solidity ^0.8.13;
 
 import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC721/IERC721.sol";
-
 contract Bonds {
     
     uint256 _id;
     mapping(uint256 => address) private _fromID;
     mapping(uint256 => address) private _toID;
     mapping(uint256 => uint256) private _bondsExpiration;
+
     mapping(uint256 => mapping(uint256 => address)) private _bondsERC20Assets;
     mapping(uint256 => mapping(address => uint256)) private _bondsERC20;
 
@@ -17,11 +17,12 @@ contract Bonds {
 
     mapping(uint256 => mapping(address => uint256)) private _bondsERC721;
 
-    function addBond(address from, address to, uint256 duration) public {
+    function addBond(address from, address to, uint256 duration) public returns(uint256) {
         _fromID[_id] = from;
         _toID[_id] = to;
         _bondsExpiration[_id] = block.timestamp + duration;
         _id++;
+        return _id - 1;
     }
 
     function updateBondDuration(uint256 bondID, uint256 duration) public bondExistence(bondID) onlyBondOwner(bondID) {
@@ -32,8 +33,6 @@ contract Bonds {
         _bondsERC20[bondID][asset] = amount;
         _bondsERC20[bondID][address(0)]++;
         _bondsERC20Assets[bondID][_bondsERC20[bondID][address(0)]] = asset;
-        //TODO: Check return value
-        IERC20(asset).approve(address(this), amount);
     }
 
     function batchUpdateBondERC20(uint256 bondID, address[] memory assets, uint256[] memory amounts) public bondExistence(bondID) onlyBondOwner(bondID) {
@@ -61,8 +60,6 @@ contract Bonds {
         _bondsERC721[bondID][asset] = tokenID;
         _bondsERC721[bondID][address(0)]++;
         _bondsERC721Assets[bondID][_bondsERC721[bondID][address(0)]] = asset;
-        //TODO: Check return value
-        IERC721(asset).approve(address(this), tokenID);
     }
 
     function batchUpdateBondERC721(uint256 bondID, address[] memory assets, uint256[] memory tokenIDs) public bondExistence(bondID) onlyBondOwner(bondID) {
